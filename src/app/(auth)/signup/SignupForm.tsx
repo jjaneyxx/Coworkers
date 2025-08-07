@@ -140,9 +140,7 @@ export default function SignupForm() {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!isFormValid) return;
-
     try {
       const data = await signUp({
         body: {

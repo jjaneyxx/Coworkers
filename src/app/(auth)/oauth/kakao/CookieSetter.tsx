@@ -13,7 +13,7 @@ export default function CookieSetter({ code, state }: CookieSetterProps) {
     (async () => {
       await loginWithOauth({ code, state });
     })();
-  }, []);
+  }, [code, state]);
 
   return <div></div>;
 }

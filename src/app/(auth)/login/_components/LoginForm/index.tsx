@@ -4,59 +4,14 @@ import InputWithLabel from '@/components/auth/InputWithLabel';
 import Button from '@/components/common/Button';
 import { signIn } from '@/lib/apis/auth';
 import { getUserGroups } from '@/lib/apis/user';
-import {
-  validateEmail,
-  validateName,
-  validatePassword,
-  validatePasswordConfirm,
-} from '@/utils/inputValidation';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
-import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/routes';
 import { InputType } from '@/components/auth/type';
 import OpenPasswordResetModal from '@/app/(auth)/login/_components/LoginForm/OpenPasswordResetModal';
-
-// schema
-const inputEmptySchema = z.object({
-  email: z.string().nonempty({ message: '이메일은 필수 입력입니다.' }),
-  password: z.string().nonempty({ message: '비밀번호는 필수 입력입니다.' }),
-  userName: z.string().nonempty({ message: '이름은 필수 입력입니다.' }),
-  passwordConfirm: z
-    .string()
-    .nonempty({ message: '비밀번호 확인은 필수 입력입니다.' }),
-});
-
-const inputValidSchema = z
-  .object({
-    email: z.string().refine(validateEmail, {
-      message: '올바른 이메일 형식이 아닙니다.',
-    }),
-    password: z.string().refine(validatePassword, {
-      message:
-        '비밀번호는 영문, 숫자, 특수문자를 포함한 8자 이상이어야 합니다.',
-    }),
-    userName: z.string().refine(validateName, {
-      message: '이름은 10자 이하로 입력해주세요.',
-    }),
-    passwordConfirm: z.string(), // 기본 정의
-  })
-
-  // 외부 유효성 검사 함수를 직접 호출해서 사용
-  // ctx : Zod 내부 컨텍스트
-  .superRefine(({ password, passwordConfirm }, ctx) => {
-    const isMatch = validatePasswordConfirm({ password, passwordConfirm });
-
-    if (!isMatch) {
-      ctx.addIssue({
-        path: ['passwordConfirm'],
-        code: z.ZodIssueCode.custom, // 반드시 enum 값이어야 함
-        message: '비밀번호가 일치하지 않습니다.',
-      });
-    }
-  });
+import { authSchema } from '@/app/(auth)/_schemas/authSchemas';
 
 export default function LoginForm() {
   const [formValues, setFormValues] = useState<{
@@ -86,32 +41,10 @@ export default function LoginForm() {
     );
   }, [formValues, formErrors]);
 
-  const handleInputBlur =
-    (key: InputType) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newFormValues = { ...formValues, [key]: e.target.value };
-      setFormValues(newFormValues);
-
-      const result = inputEmptySchema.safeParse(newFormValues);
-
-      if (!result.success) {
-        const fieldErrors = result.error.flatten().fieldErrors;
-
-        setFormErrors((prev) => ({
-          ...prev,
-          [key]: fieldErrors[key],
-        }));
-      } else {
-        setFormErrors((prev) => ({
-          ...prev,
-          [key]: '',
-        }));
-      }
-    };
-
   const handleInputChange =
     (key: InputType) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const newFormValues = { ...formValues, [key]: e.target.value };
-      const result = inputValidSchema.safeParse(newFormValues);
+      const result = authSchema.safeParse(newFormValues);
 
       if (!result.success) {
         const fieldErrors = result.error.flatten().fieldErrors;
@@ -202,13 +135,11 @@ export default function LoginForm() {
         <InputWithLabel
           inputType="email"
           errorMessage={formErrors.email}
-          onInputBlur={handleInputBlur}
           onInputChange={handleInputChange}
         />
         <InputWithLabel
           inputType="password"
           errorMessage={formErrors.password}
-          onInputBlur={handleInputBlur}
           onInputChange={handleInputChange}
         />
       </div>
